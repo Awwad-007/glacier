@@ -1,13 +1,11 @@
-// See https://go.microsoft.com/fwlink/?LinkId=733558
-// for the documentation about the tasks.json format
 {
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "watch-web",
+			"label": "watch",
 			"dependsOn": [
-				"npm: watch-web:tsc",
-				"npm: watch-web:esbuild"
+				"npm: watch:tsc",
+				"npm: watch:esbuild"
 			],
 			"presentation": {
 				"reveal": "never"
@@ -19,11 +17,11 @@
 		},
 		{
 			"type": "npm",
-			"script": "watch-web:esbuild",
+			"script": "watch:esbuild",
 			"group": "build",
 			"problemMatcher": "$esbuild-watch",
 			"isBackground": true,
-			"label": "npm: watch-web:esbuild",
+			"label": "npm: watch:esbuild",
 			"presentation": {
 				"group": "watch",
 				"reveal": "never"
@@ -31,11 +29,11 @@
 		},
 		{
 			"type": "npm",
-			"script": "watch-web:tsc",
+			"script": "watch:tsc",
 			"group": "build",
 			"problemMatcher": "$tsc-watch",
 			"isBackground": true,
-			"label": "npm: watch-web:tsc",
+			"label": "npm: watch:tsc",
 			"presentation": {
 				"group": "watch",
 				"reveal": "never"
@@ -44,7 +42,7 @@
 		{
 			"label": "compile",
 			"type": "npm",
-			"script": "compile-web",
+			"script": "compile",
 			"problemMatcher": [
 				"$tsc",
 				"$esbuild"

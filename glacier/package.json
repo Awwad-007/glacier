@@ -7,27 +7,89 @@
     "vscode": "^1.145.0"
   },
   "categories": [
-    "Other"
+    "AI",
+    "Chat"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:glacier.chatView"
+  ],
+  "main": "./dist/extension.js",
   "browser": "./dist/web/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "glacier-sidebar",
+          "title": "Glacier",
+          "icon": "resources/glacier.svg"
+        }
+      ]
+    },
+    "views": {
+      "glacier-sidebar": [
+        {
+          "type": "webview",
+          "id": "glacier.chatView",
+          "name": "Glacier Chat"
+        }
+      ]
+    },
     "commands": [
       {
-        "command": "glacier.helloWorld",
-        "title": "Hello World"
+        "command": "glacier.openChat",
+        "title": "Glacier: Open Chat"
+      },
+      {
+        "command": "glacier.newSession",
+        "title": "Glacier: New Chat Session",
+        "icon": "$(plus)"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "glacier.newSession",
+          "when": "view == glacier.chatView",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Glacier",
+      "properties": {
+        "glacier.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:8790",
+          "description": "TrueForge server base URL."
+        },
+        "glacier.model": {
+          "type": "string",
+          "default": "google-gemini/gemini-3-8-flash",
+          "description": "Model to use for TrueForge agent sessions."
+        },
+        "glacier.agentName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Optional named agent in the TrueForge agent registry."
+        }
+      }
+    }
   },
   "scripts": {
     "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/extensionTests.js",
-    "pretest": "npm run compile-web",
-    "vscode:prepublish": "npm run package-web",
-    "compile-web": "npm run check-types && npm run lint && node esbuild.js",
-    "watch-web": "npm-run-all -p watch-web:*",
-    "watch-web:esbuild": "node esbuild.js --watch",
-    "watch-web:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package-web": "npm run check-types && npm run lint && node esbuild.js --production",
+    "pretest": "npm run compile",
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "compile-web": "npm run compile",
+    "watch": "npm-run-all -p watch:*",
+    "watch-web": "npm run watch",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "package-web": "npm run package",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
     "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."

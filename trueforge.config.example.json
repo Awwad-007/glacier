@@ -1,0 +1,5 @@
+{
+  "baseUrl": "http://localhost:8790",
+  "model": "google-gemini/gemini-3-8-flash",
+  "agentName": null
+}
