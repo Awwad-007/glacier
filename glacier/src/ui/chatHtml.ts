@@ -529,6 +529,36 @@ export function getChatHtml(
       saveState();
     }
 
+    let renderRafId = null;
+
+    function scheduleRenderAssistant() {
+      if (renderRafId !== null) return;
+      renderRafId = requestAnimationFrame(() => {
+        renderRafId = null;
+        if (currentAssistantBubble) {
+          renderMarkdown(currentAssistantBubble, currentAssistantRawText);
+          if (currentCursor) {
+            currentAssistantBubble.appendChild(currentCursor);
+          }
+          scrollToBottom();
+        }
+      });
+    }
+
+    function flushRenderAssistant() {
+      if (renderRafId !== null) {
+        cancelAnimationFrame(renderRafId);
+        renderRafId = null;
+      }
+      if (currentAssistantBubble) {
+        renderMarkdown(currentAssistantBubble, currentAssistantRawText);
+        if (currentCursor) {
+          currentAssistantBubble.appendChild(currentCursor);
+        }
+        scrollToBottom();
+      }
+    }
+
     function setGenerating(generating) {
       isGenerating = generating;
       if (generating) {
@@ -536,6 +566,7 @@ export function getChatHtml(
         sendBtn.classList.add('cancel-btn');
         statusDot.style.backgroundColor = '#e5a50a'; // yellow/busy
       } else {
+        flushRenderAssistant();
         sendBtn.textContent = 'Send';
         sendBtn.classList.remove('cancel-btn');
         statusDot.style.backgroundColor = '#388a34'; // green/idle
@@ -573,11 +604,7 @@ export function getChatHtml(
         startAssistantMessage();
       }
       currentAssistantRawText += delta;
-      renderMarkdown(currentAssistantBubble, currentAssistantRawText);
-      if (currentCursor) {
-        currentAssistantBubble.appendChild(currentCursor);
-      }
-      scrollToBottom();
+      scheduleRenderAssistant();
     }
 
     function removeCursor() {
