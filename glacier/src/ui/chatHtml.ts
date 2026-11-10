@@ -633,7 +633,7 @@ export function getChatHtml(
 
       // Code blocks
       html = html.replace(new RegExp('\\x60\\x60\\x60([a-zA-Z0-9_-]*)\\n([\\s\\S]*?)\\x60\\x60\\x60', 'g'), function(match, lang, code) {
-        return '<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>' + code + '</code></pre>';
+        return '<pre><button class="copy-btn" type="button">Copy</button><code>' + code + '</code></pre>';
       });
 
       // Inline code
@@ -661,15 +661,21 @@ export function getChatHtml(
       container.innerHTML = html;
     }
 
-    window.copyCode = function(button) {
-      const codeBlock = button.parentElement.querySelector('code');
-      if (codeBlock) {
-        navigator.clipboard.writeText(codeBlock.innerText).then(() => {
-          button.textContent = 'Copied!';
-          setTimeout(() => { button.textContent = 'Copy'; }, 1500);
-        });
+    // Event delegation for copy buttons (respecting CSP nonce)
+    messagesContainer.addEventListener('click', (e) => {
+      const target = e.target;
+      if (target && target.classList && target.classList.contains('copy-btn')) {
+        const codeBlock = target.parentElement ? target.parentElement.querySelector('code') : null;
+        if (codeBlock) {
+          navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+            target.textContent = 'Copied!';
+            setTimeout(() => { target.textContent = 'Copy'; }, 1500);
+          }).catch((err) => {
+            console.error('Failed to copy code block:', err);
+          });
+        }
       }
-    };
+    });
 
     function saveState() {
       const bubbles = messagesContainer.querySelectorAll('.message-row');
