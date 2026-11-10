@@ -1,8 +1,13 @@
 import { TurnStreamingEvent } from './types';
 
+interface StreamResolver {
+  resolve: (value: IteratorResult<TurnStreamingEvent>) => void;
+  reject: (err: any) => void;
+}
+
 export class EventStream implements AsyncIterable<TurnStreamingEvent> {
   private queue: TurnStreamingEvent[] = [];
-  private resolvers: ((value: IteratorResult<TurnStreamingEvent>) => void)[] = [];
+  private resolvers: StreamResolver[] = [];
   private done = false;
   private error: Error | null = null;
   private abortController: AbortController;
@@ -21,8 +26,8 @@ export class EventStream implements AsyncIterable<TurnStreamingEvent> {
     this.emit('*', event);
 
     if (this.resolvers.length > 0) {
-      const resolve = this.resolvers.shift()!;
-      resolve({ value: event, done: false });
+      const waiter = this.resolvers.shift()!;
+      waiter.resolve({ value: event, done: false });
     } else {
       this.queue.push(event);
     }
@@ -34,8 +39,8 @@ export class EventStream implements AsyncIterable<TurnStreamingEvent> {
     }
     this.done = true;
     while (this.resolvers.length > 0) {
-      const resolve = this.resolvers.shift()!;
-      resolve({ value: undefined as any, done: true });
+      const waiter = this.resolvers.shift()!;
+      waiter.resolve({ value: undefined as any, done: true });
     }
   }
 
@@ -46,8 +51,8 @@ export class EventStream implements AsyncIterable<TurnStreamingEvent> {
     this.error = err;
     this.done = true;
     while (this.resolvers.length > 0) {
-      const resolve = this.resolvers.shift()!;
-      resolve({ value: undefined as any, done: true });
+      const waiter = this.resolvers.shift()!;
+      waiter.reject(err);
     }
   }
 
@@ -89,8 +94,8 @@ export class EventStream implements AsyncIterable<TurnStreamingEvent> {
         if (this.done) {
           return Promise.resolve({ value: undefined as any, done: true });
         }
-        return new Promise<IteratorResult<TurnStreamingEvent>>((resolve) => {
-          this.resolvers.push(resolve);
+        return new Promise<IteratorResult<TurnStreamingEvent>>((resolve, reject) => {
+          this.resolvers.push({ resolve, reject });
         });
       }
     };
