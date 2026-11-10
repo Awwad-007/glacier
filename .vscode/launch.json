@@ -12,20 +12,6 @@
 				"${workspaceFolder}/glacier/dist/**/*.js"
 			],
 			"preLaunchTask": "${defaultBuildTask}"
-		},
-		{
-			"name": "Run Web Extension",
-			"type": "extensionHost",
-			"debugWebWorkerHost": true,
-			"request": "launch",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/glacier",
-				"--extensionDevelopmentKind=web"
-			],
-			"outFiles": [
-				"${workspaceFolder}/glacier/dist/web/**/*.js"
-			],
-			"preLaunchTask": "${defaultBuildTask}"
 		}
 	]
 }
