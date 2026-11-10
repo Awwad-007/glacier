@@ -23,6 +23,12 @@ export interface TrueForgeConfig {
    * Optional system instructions / role prompt for the agent.
    */
   instructions?: string | null;
+
+  /**
+   * Idle timeout in milliseconds with no data received before failing the stream.
+   * Defaults to 30,000 ms (30s).
+   */
+  idleTimeoutMs?: number;
 }
 
 /**

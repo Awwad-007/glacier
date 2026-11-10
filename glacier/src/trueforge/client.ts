@@ -13,6 +13,7 @@ export const DEFAULT_CONFIG: TrueForgeConfig = {
   model: 'google-gemini/gemini-3-8-flash',
   agentName: null,
   instructions: null,
+  idleTimeoutMs: 30000,
 };
 
 export function resolveConfig(config?: Partial<TrueForgeConfig>): TrueForgeConfig {
@@ -21,6 +22,7 @@ export function resolveConfig(config?: Partial<TrueForgeConfig>): TrueForgeConfi
     model: config?.model !== undefined ? config.model : DEFAULT_CONFIG.model,
     agentName: config?.agentName !== undefined ? config.agentName : DEFAULT_CONFIG.agentName,
     instructions: config?.instructions !== undefined ? config.instructions : DEFAULT_CONFIG.instructions,
+    idleTimeoutMs: config?.idleTimeoutMs !== undefined ? config.idleTimeoutMs : DEFAULT_CONFIG.idleTimeoutMs,
   };
 }
 
@@ -99,6 +101,33 @@ export async function sendTurn(
   const abortController = new AbortController();
   const eventStream = new EventStream(abortController);
 
+  const idleTimeout = cfg.idleTimeoutMs ?? 30000;
+  let idleTimer: ReturnType<typeof setTimeout> | undefined;
+  let activeReader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+
+  const resetIdleTimer = () => {
+    if (idleTimer) {
+      clearTimeout(idleTimer);
+    }
+    idleTimer = setTimeout(() => {
+      const timeoutSec = Math.round(idleTimeout / 1000);
+      eventStream.fail(new Error(`TrueForge stream timed out: no data received for ${timeoutSec} seconds`));
+      abortController.abort();
+      try {
+        activeReader?.cancel().catch(() => {});
+      } catch {
+        // ignore
+      }
+    }, idleTimeout);
+  };
+
+  const clearIdleTimer = () => {
+    if (idleTimer) {
+      clearTimeout(idleTimer);
+      idleTimer = undefined;
+    }
+  };
+
   if (onEvent) {
     eventStream.on('*', onEvent);
   }
@@ -144,14 +173,20 @@ export async function sendTurn(
       }
 
       const reader = response.body.getReader();
+      activeReader = reader;
       const decoder = new TextDecoder();
       let buffer = '';
+
+      resetIdleTimer();
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
+          clearIdleTimer();
           break;
         }
+
+        resetIdleTimer();
 
         buffer += decoder.decode(value, { stream: true });
 
@@ -198,6 +233,8 @@ export async function sendTurn(
       } else {
         eventStream.fail(err instanceof Error ? err : new Error(String(err)));
       }
+    } finally {
+      clearIdleTimer();
     }
   })();
 
