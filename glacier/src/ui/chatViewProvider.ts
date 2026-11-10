@@ -52,7 +52,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
 
         case 'newSession': {
-          this.newSession();
+          await this.newSession();
           break;
         }
       }
@@ -151,8 +151,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  public newSession(): void {
-    this.client.setSessionId(null);
+  public async newSession(): Promise<void> {
+    try {
+      await this.client.newSession();
+    } catch (err) {
+      console.warn('Failed to cancel session during newSession:', err);
+      this.client.setSessionId(null);
+    }
     this.view?.webview.postMessage({ type: 'resetSession' });
   }
 }

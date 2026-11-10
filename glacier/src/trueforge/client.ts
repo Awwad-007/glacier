@@ -283,4 +283,9 @@ export class TrueForgeClient {
       await cancel(this.currentSessionId, this.config);
     }
   }
+
+  public async newSession(): Promise<void> {
+    await this.cancel();
+    this.currentSessionId = null;
+  }
 }

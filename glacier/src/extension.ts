@@ -28,8 +28,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Command to start a new chat session
   context.subscriptions.push(
-    vscode.commands.registerCommand('glacier.newSession', () => {
-      chatProvider.newSession();
+    vscode.commands.registerCommand('glacier.newSession', async () => {
+      await chatProvider.newSession();
       vscode.window.showInformationMessage('Glacier: New chat session started.');
     })
   );
