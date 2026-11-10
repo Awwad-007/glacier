@@ -81,6 +81,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       }
 
       let receivedDeltas = false;
+      let receivedTurnDone = false;
 
       const stream = await this.client.sendTurn(text, (event: TurnStreamingEvent) => {
         if (event.type === 'model.message.delta') {
@@ -101,6 +102,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             });
           }
         } else if (event.type === 'turn.done') {
+          receivedTurnDone = true;
           const doneEvent = event as { state?: { status: string; message?: string } };
           const status = doneEvent.state?.status;
           if (status === 'error') {
@@ -119,6 +121,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       // Also consume async iterator to ensure completion / error propagation
       for await (const _ of stream) {
         // Events are handled in real-time by the event callback
+      }
+
+      if (!receivedTurnDone) {
+        this.view?.webview.postMessage({
+          type: 'turnError',
+          message: 'Connection to TrueForge closed unexpectedly',
+        });
       }
     } catch (err: any) {
       if (err.name === 'AbortError') {
