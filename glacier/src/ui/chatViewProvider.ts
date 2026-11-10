@@ -61,7 +61,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
   private async handleUserMessage(text: string): Promise<void> {
     try {
-      // Reload config before sending in case trueforge.config.json was edited
+      // Reload config before sending in case VS Code settings changed
       const { config } = await loadConfig();
       this.client.updateConfig(config);
 
