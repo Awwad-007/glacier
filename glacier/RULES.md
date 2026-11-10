@@ -1,0 +1,5 @@
+- The extension NEVER calls Gemini/OpenAI/any model provider directly. It only talks to TrueForge at http://localhost:8790.
+- Editor abilities (read file, search workspace, propose edit, run command) are exposed to the agent as MCP tools.
+- No file is written to disk without the user accepting it (per-hunk).
+- No API keys in code or in git. Use an example config file.
+- Read TrueForge's API docs at http://localhost:8790/api/v1/docs before writing any TrueForge code. Do not guess endpoints.
