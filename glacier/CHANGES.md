@@ -109,3 +109,103 @@ This document records the 9 hardening fixes applied to the Glacier VS Code exten
   ℹ pass 7
   ℹ fail 0
   ```
+
+---
+
+## Follow-Up Hardening & Regression Fixes
+
+### Fix 10: Suppress Spurious Premature-Close turnError When Stopped by User
+- **What Changed**: Added a per-turn flag `stoppedByUser` in `ChatViewProvider`. In `handleCancel()` and `newSession()`, `this.stoppedByUser = true` is set before invoking `client.cancel()`. In `handleUserMessage()`, premature stream closure without `turn.done` does not post `turnError` if `stoppedByUser` is true. `stoppedByUser` is reset to `false` at the start of each new turn. Stopping a turn now produces only `turnCancelled`, and starting a new session mid-stream produces only `resetSession`, with no `turnError` in either case.
+- **Files Modified**:
+  - `src/ui/chatViewProvider.ts`
+- **Test Result**: `PASS` (`tsc --noEmit` succeeded with code 0; verified by provider test suite)
+
+---
+
+### Fix 11: Render "(Turn cancelled)" Notice Before Clearing Assistant Bubble
+- **What Changed**: In `src/ui/chatHtml.ts`, in the `'turnCancelled'` message handler, ensured `flushRenderAssistant()` flushes any pending RAF updates, and the `"(Turn cancelled)"` note is appended directly into `currentAssistantBubble` before `setGenerating(false)` and `currentAssistantBubble = null` are called. This ensures the cancellation note reliably appears directly underneath the partial streamed response text.
+- **Files Modified**:
+  - `src/ui/chatHtml.ts`
+- **Test Result**: `PASS` (`tsc --noEmit` succeeded with code 0)
+
+---
+
+### Fix 12: Provider-Level Test Suite (`tests/provider.test.cjs`)
+- **What Changed**: Added a provider-level test suite `tests/provider.test.cjs` using `esbuild.buildSync` with `--alias:vscode` mapped to `tests/vscodeStub.cjs`. The stub exports `workspace.getConfiguration`, `Uri`, `window`, and `commands`, backed by a shared `globalThis.__vscodeSettings`. Configured a mock SSE HTTP server testing 5 provider-level interaction sequences:
+  1. Normal turn (`userMessage` -> `turn.start` -> `token` -> `turn.done` -> `idle`)
+  2. HTTP 500 on turn start (`turnError` -> `idle`)
+  3. Stream closing without `turn.done` (`turnError` "Connection to TrueForge closed unexpectedly" -> `idle`)
+  4. Mid-stream cancel (`turnCancelled` -> `idle`, no `turnError`)
+  5. Mid-stream new session (`resetSession` -> `idle`, no `turnError`)
+  Added `tests/provider.test.cjs` to the `test:client` script in `package.json`.
+- **Files Modified/Created**:
+  - `tests/vscodeStub.cjs`
+  - `tests/provider.test.cjs`
+  - `package.json`
+- **Test Result**: `PASS` (5/5 provider tests passing)
+
+---
+
+### Fix 13: Configurable Idle Timeout (120s Default & glacier.idleTimeoutMs)
+- **What Changed**: Changed default idle timeout from 30,000 ms to 120,000 ms in `DEFAULT_CONFIG.idleTimeoutMs`. Added `glacier.idleTimeoutMs` setting in `package.json` under `contributes.configuration` and updated `src/config/config.ts` to read `glacier.idleTimeoutMs` from VS Code configuration. Updated `tests/idleTimeout.test.cjs` to assert the 120,000 ms default value.
+- **Files Modified**:
+  - `package.json`
+  - `src/config/config.ts`
+  - `src/trueforge/client.ts`
+  - `src/trueforge/types.ts`
+  - `tests/idleTimeout.test.cjs`
+- **Test Result**: `PASS`
+
+---
+
+## Full Test & Validation Output
+
+### 1. `npm run check-types`
+```text
+> glacier@0.0.1 check-types
+> tsc --noEmit
+```
+Result: Code 0 (Success)
+
+### 2. `npm run lint`
+```text
+> glacier@0.0.1 lint
+> eslint src
+```
+Result: Code 0 (Success, 0 warnings, 0 errors)
+
+### 3. `node esbuild.js`
+```text
+[watch] build started
+[watch] build finished
+```
+Result: Code 0 (Success, extension.js bundled cleanly)
+
+### 4. `npm run test:client`
+```text
+> glacier@0.0.1 test:client
+> node --test tests/client.test.cjs tests/eventStream.test.cjs tests/idleTimeout.test.cjs tests/provider.test.cjs
+
+✔ Scenario 1: HTTP 500 on turns fails with appropriate error (90.4542ms)
+✔ Scenario 2: Stream closing without turn.done delivers events then ends cleanly without turn.done (17.8714ms)
+✔ Scenario 3: Mid-stream cancel aborts stream and calls cancel endpoint (24.9539ms)
+✔ Scenario 4: Server down fails gracefully with connection error (6.7447ms)
+✔ EventStream.fail() rejects waiting consumer with the error (2.1486ms)
+✔ EventStream.fail() rejects subsequent consumer calls (0.4275ms)
+✔ DEFAULT_CONFIG idleTimeoutMs defaults to 120000 (0.9958ms)
+✔ sendTurn idle timeout fails stream when no data received within timeout (264.817ms)
+✔ Provider: normal turn (164.2678ms)
+✔ Provider: HTTP 500 on turns (19.7918ms)
+✔ Provider: stream closing without turn.done (23.6914ms)
+✔ Provider: user cancel mid-stream (94.6938ms)
+✔ Provider: new session mid-stream (73.7689ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 795.0046
+```
+Result: Code 0 (13 passed, 0 failed)
