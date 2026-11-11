@@ -9,6 +9,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
   private view?: vscode.WebviewView;
   private client: TrueForgeClient;
+  private stoppedByUser = false;
 
   constructor(private readonly extensionUri: vscode.Uri) {
     this.client = new TrueForgeClient();
@@ -60,6 +61,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async handleUserMessage(text: string): Promise<void> {
+    this.stoppedByUser = false;
     try {
       // Reload config before sending in case VS Code settings changed
       const { config } = await loadConfig();
@@ -123,14 +125,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         // Events are handled in real-time by the event callback
       }
 
-      if (!receivedTurnDone) {
+      if (!receivedTurnDone && !this.stoppedByUser) {
         this.view?.webview.postMessage({
           type: 'turnError',
           message: 'Connection to TrueForge closed unexpectedly',
         });
       }
     } catch (err: any) {
-      if (err.name === 'AbortError') {
+      if (this.stoppedByUser) {
+        // Handled by handleCancel() or newSession()
+      } else if (err.name === 'AbortError') {
         this.view?.webview.postMessage({ type: 'turnCancelled' });
       } else {
         const msg = err?.message || String(err);
@@ -143,6 +147,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async handleCancel(): Promise<void> {
+    this.stoppedByUser = true;
     try {
       await this.client.cancel();
       this.view?.webview.postMessage({ type: 'turnCancelled' });
@@ -152,6 +157,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   }
 
   public async newSession(): Promise<void> {
+    this.stoppedByUser = true;
     try {
       await this.client.newSession();
     } catch (err) {
