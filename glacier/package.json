@@ -86,7 +86,7 @@
     "package": "npm run check-types && npm run lint && node esbuild.js --production",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "test:client": "node --test tests/client.test.cjs tests/eventStream.test.cjs tests/idleTimeout.test.cjs",
+    "test:client": "node --test tests/client.test.cjs tests/eventStream.test.cjs tests/idleTimeout.test.cjs tests/provider.test.cjs",
     "test": "npm run test:client"
   },
   "devDependencies": {
