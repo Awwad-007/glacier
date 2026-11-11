@@ -737,7 +737,7 @@ export function getChatHtml(
           currentAssistantBubble = null;
           break;
         case 'turnCancelled':
-          setGenerating(false);
+          flushRenderAssistant();
           if (currentAssistantBubble) {
             const notice = document.createElement('div');
             notice.style.fontSize = '11px';
@@ -745,7 +745,9 @@ export function getChatHtml(
             notice.style.marginTop = '4px';
             notice.textContent = '(Turn cancelled)';
             currentAssistantBubble.appendChild(notice);
+            scrollToBottom();
           }
+          setGenerating(false);
           currentAssistantBubble = null;
           break;
         case 'turnError':
