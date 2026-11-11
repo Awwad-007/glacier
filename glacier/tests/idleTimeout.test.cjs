@@ -14,7 +14,11 @@ Module.prototype.require = function (id) {
 const http = require('node:http');
 const assert = require('node:assert');
 const test = require('node:test');
-const { sendTurn } = require('../dist/extension.js');
+const { sendTurn, DEFAULT_CONFIG } = require('../dist/extension.js');
+
+test('DEFAULT_CONFIG idleTimeoutMs defaults to 120000', () => {
+  assert.strictEqual(DEFAULT_CONFIG.idleTimeoutMs, 120000);
+});
 
 test('sendTurn idle timeout fails stream when no data received within timeout', async () => {
   let clientRes;

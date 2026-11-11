@@ -26,7 +26,7 @@ export interface TrueForgeConfig {
 
   /**
    * Idle timeout in milliseconds with no data received before failing the stream.
-   * Defaults to 30,000 ms (30s).
+   * Defaults to 120,000 ms (120s).
    */
   idleTimeoutMs?: number;
 }

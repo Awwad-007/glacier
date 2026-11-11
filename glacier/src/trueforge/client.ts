@@ -13,7 +13,7 @@ export const DEFAULT_CONFIG: TrueForgeConfig = {
   model: 'google-gemini/gemini-3-8-flash',
   agentName: null,
   instructions: null,
-  idleTimeoutMs: 30000,
+  idleTimeoutMs: 120000,
 };
 
 export function resolveConfig(config?: Partial<TrueForgeConfig>): TrueForgeConfig {

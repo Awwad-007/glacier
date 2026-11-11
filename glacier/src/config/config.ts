@@ -18,12 +18,14 @@ export async function loadConfig(): Promise<LoadedConfigResult> {
   const baseUrl = vscConfig.get<string>('baseUrl') || DEFAULT_CONFIG.baseUrl;
   const model = vscConfig.get<string>('model') || DEFAULT_CONFIG.model;
   const agentName = vscConfig.get<string | null>('agentName') || DEFAULT_CONFIG.agentName;
+  const idleTimeoutMs = vscConfig.get<number>('idleTimeoutMs') ?? DEFAULT_CONFIG.idleTimeoutMs;
 
   return {
     config: resolveConfig({
       baseUrl,
       model,
       agentName,
+      idleTimeoutMs,
     }),
     source: 'VS Code Settings',
   };

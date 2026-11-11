@@ -73,6 +73,11 @@
           ],
           "default": null,
           "description": "Optional named agent in the TrueForge agent registry."
+        },
+        "glacier.idleTimeoutMs": {
+          "type": "number",
+          "default": 120000,
+          "description": "Idle timeout in milliseconds before an unresponsive turn stream is aborted."
         }
       }
     }
